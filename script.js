@@ -29,7 +29,7 @@ const loader = new THREE.GLTFLoader();
 let mousqueton = null;
 let gatePart = null;
 
-loader.load('assets/mousqueton_web.glb', (gltf) => {
+loader.load('./assets/mousqueton_web.glb', function (gltf) {
     console.log("✅ MODÈLE CHARGÉ !");
     mousqueton = gltf.scene;
     scene.add(mousqueton);
