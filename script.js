@@ -1,6 +1,14 @@
 const canvas = document.querySelector('#webgl');
 const scene = new THREE.Scene();
 
+// Lumière ambiante (éclaire tout doucement)
+const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+scene.add(ambientLight);
+
+// Lumière directionnelle (comme le soleil)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+directionalLight.position.set(5, 10, 7);
+scene.add(directionalLight);
 // 1. CAMÉRA
 // On la place à z=25 car votre objet fait environ 8 mètres de haut.
 // Il faut du recul pour le voir en entier.
