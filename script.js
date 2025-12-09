@@ -41,32 +41,50 @@ loader.load('assets/mousqueton_web.glb', (gltf) => {
     mousqueton.position.x += (mousqueton.position.x - center.x);
     mousqueton.position.y += (mousqueton.position.y - center.y);
     mousqueton.position.z += (mousqueton.position.z - center.z);
+    
+    // On garde ton scale qui marchait bien s'il y en avait un, sinon on laisse tel quel
+    // mousqueton.scale.set(25, 25, 25); // Décommente si besoin de grossir
 
     const maxDim = Math.max(size.x, size.y, size.z);
-    camera.position.z = maxDim * 3.5; // Recule un peu la caméra
+    camera.position.z = maxDim * 3.5; 
 
-    // --- RECHERCHE PRÉCISE DU DOIGT ---
+    // --- 🕵️‍♂️ MODE DÉTECTIVE : AFFICHER LA STRUCTURE ---
+    // Ouvre ta console (F12) pour voir les noms exacts !
+    console.group("Structure du Mousqueton");
     mousqueton.traverse((child) => {
-        if (child.isMesh || child.type === 'Group') {
-            // On cherche le nom EXACT que tu viens de mettre
-            if (child.name === 'DOIGT_MOBILE') {
-                console.log("🎯 Doigt trouvé :", child.name);
-                gatePart = child;
-            }
-            // Sécurité : si tu n'as pas renommé, on essaie de trouver un parent logique
-            // au lieu du grip.
-            else if (!gatePart && (child.name.includes('vis_base') || child.name.includes('bloqueur'))) {
-                 // Si on tombe sur la vis, on prend son parent (qui est souvent le doigt entier)
-                 if(child.parent && child.parent.type !== 'Scene') {
-                     gatePart = child.parent;
-                     console.log("⚠️ Grip détecté, utilisation du parent :", gatePart.name);
-                 }
-            }
+        if (child.isMesh) {
+            console.log(`🔹 Pièce : ${child.name} | Parent : ${child.parent.name} | Grand-Parent : ${child.parent?.parent?.name}`);
+        }
+    });
+    console.groupEnd();
+
+    // --- RECHERCHE ET CORRECTION DU DOIGT ---
+    mousqueton.traverse((child) => {
+        // 1. Cas Idéal : Tu as le bon nom
+        if (child.name === 'DOIGT_MOBILE' || child.name === 'Doigt' || child.name === 'Gate') {
+             gatePart = child;
+             console.log("🎯 BINGO : Doigt trouvé par son nom direct !");
+        }
+        
+        // 2. Cas de Secours : On tombe sur le grip ou la vis
+        else if (!gatePart && (child.name.includes('vis') || child.name.includes('bloqueur') || child.name.includes('grip'))) {
+             // C'est ici l'astuce : On remonte d'un cran supplémentaire !
+             // Si le parent s'appelle "Scene", on est allé trop loin, on garde le parent simple.
+             // Sinon, on prend le grand-parent.
+             
+             if (child.parent.parent && child.parent.parent.type !== 'Scene') {
+                 gatePart = child.parent.parent;
+                 console.log("🔧 Grip détecté -> On a pris le GRAND-PARENT :", gatePart.name);
+             } else {
+                 gatePart = child.parent;
+                 console.log("🔧 Grip détecté -> On a pris le PARENT :", gatePart.name);
+             }
         }
     });
 
     initScrollAnimations();
 });
+
 
 // 3. ANIMATIONS GSAP
 gsap.registerPlugin(ScrollTrigger);
@@ -103,7 +121,7 @@ function initScrollAnimations() {
         gsap.to(gatePart.rotation, {
             y: -0.8, // Ajuste cet axe (x, y ou z) selon ton modèle !
             scrollTrigger: {
-                trigger: ".DOIGT_MOBILE", // C'est ici que c'était faux avant
+                trigger: ".security", // C'est ici que c'était faux avant
                 start: "top center",
                 end: "bottom center",
                 scrub: true
