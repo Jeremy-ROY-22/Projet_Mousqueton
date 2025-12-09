@@ -1,26 +1,16 @@
 const canvas = document.querySelector('#webgl');
 const scene = new THREE.Scene();
 
-// Lumière ambiante (éclaire tout doucement)
-const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-scene.add(ambientLight);
-
-// Lumière directionnelle (comme le soleil)
-const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-directionalLight.position.set(5, 10, 7);
-scene.add(directionalLight);
 // 1. CAMÉRA
-// On la place à z=25 car votre objet fait environ 8 mètres de haut.
-// Il faut du recul pour le voir en entier.
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 25; 
+camera.position.z = 25; // Le recul nécessaire pour voir l'objet entier
 
 // 2. RENDU
 const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-// 3. LUMIÈRES
+// 3. LUMIÈRES (Une seule fois !)
 const ambientLight = new THREE.AmbientLight(0xffffff, 1);
 scene.add(ambientLight);
 
@@ -28,7 +18,7 @@ const spotLight = new THREE.SpotLight(0xffffff, 2);
 spotLight.position.set(10, 10, 10);
 scene.add(spotLight);
 
-const rimLight = new THREE.DirectionalLight(0xff3333, 2); // Touche rouge
+const rimLight = new THREE.DirectionalLight(0xff3333, 2); // Touche rouge stylée
 rimLight.position.set(-5, 0, -10);
 scene.add(rimLight);
 
@@ -37,40 +27,37 @@ const loader = new THREE.GLTFLoader();
 let mousqueton = null;
 let gatePart = null;
 
+// On utilise bien le dossier assets
 loader.load('./assets/mousqueton_web.glb', function (gltf) {
     console.log("✅ MODÈLE CHARGÉ !");
     mousqueton = gltf.scene;
     scene.add(mousqueton);
 
-    // --- CORRECTION DE POSITION (Basée sur votre console) ---
-    // Votre objet est centré à Y=9. On le descend de 9 pour le mettre à 0.
-    mousqueton.position.set(0, -9, 0);
-    
-    // Votre objet a une taille de ~8. L'échelle 1 est donc parfaite.
-    // On ne touche pas au scale (ou on met 1 par sécurité).
+    // Positionnement
+    mousqueton.position.set(0, -9, 0); 
     mousqueton.scale.set(1, 1, 1); 
+    mousqueton.rotation.set(0, 0, 0);
 
-    // Rotation initiale pour qu'il soit face à nous
-    mousqueton.rotation.x = 0;
-    mousqueton.rotation.y = 0;
-
-    // Recherche du doigt
+    // Recherche du doigt pour l'animation
     mousqueton.traverse((child) => {
         if (child.name === 'DOIGT_MOBILE' || (child.name.includes('vis') && child.parent.type !== 'Scene')) {
             gatePart = child.name === 'DOIGT_MOBILE' ? child : child.parent;
         }
     });
 
-    initScrollAnimations();
+    initScrollAnimations(); // On lance les animations seulement quand l'objet est là
 }, 
 undefined, 
-(error) => console.error(error));
+(error) => {
+    console.error("Erreur de chargement :", error);
+});
 
-
-// 5. ANIMATIONS
+// 5. ANIMATIONS (GSAP)
 gsap.registerPlugin(ScrollTrigger);
 
 function initScrollAnimations() {
+    if (!mousqueton) return;
+
     const tl = gsap.timeline({
         scrollTrigger: {
             trigger: "body",
@@ -80,12 +67,10 @@ function initScrollAnimations() {
         }
     });
 
-    // Rotation complète
-    if (mousqueton) {
-        tl.to(mousqueton.rotation, { y: Math.PI * 2 }, 0);
-    }
+    // Rotation complète du mousqueton
+    tl.to(mousqueton.rotation, { y: Math.PI * 2 }, 0);
 
-    // Ouverture doigt
+    // Animation du doigt (si trouvé)
     if (gatePart) {
         tl.to(gatePart.rotation, { y: -0.6, duration: 0.5 }, 0.3)
           .to(gatePart.rotation, { y: 0, duration: 0.5 }, 0.7);
@@ -99,7 +84,7 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// 7. BOUCLE
+// 7. BOUCLE D'ANIMATION
 const animate = () => {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
