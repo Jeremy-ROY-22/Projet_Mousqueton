@@ -103,7 +103,7 @@ function initScrollAnimations() {
         gsap.to(gatePart.rotation, {
             y: -0.8, // Ajuste cet axe (x, y ou z) selon ton modèle !
             scrollTrigger: {
-                trigger: ".security", // C'est ici que c'était faux avant
+                trigger: ".DOIGT_MOBILE", // C'est ici que c'était faux avant
                 start: "top center",
                 end: "bottom center",
                 scrub: true
