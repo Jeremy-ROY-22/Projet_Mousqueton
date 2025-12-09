@@ -28,29 +28,48 @@ const loader = new THREE.GLTFLoader();
 let mousqueton = null;
 let gatePart = null; // La partie qui va bouger
 
+// Remplacez la partie loader.load par ceci :
+
 loader.load('assets/mousqueton_web.glb', (gltf) => {
+    console.log("✅ MODÈLE CHARGÉ !");
     mousqueton = gltf.scene;
-    
-    // Réglages initiaux
-    mousqueton.scale.set(10, 10, 10); // CHANGE L'ÉCHELLE ICI SI TROP PETIT/GRAND
-    mousqueton.rotation.x = 0.2;
-    
     scene.add(mousqueton);
 
-    // --- RECHERCHE AUTOMATIQUE DU DOIGT ---
-    console.log("--- Noms des objets trouvés dans le fichier ---");
+    // --- 1. DEBUG : AFFICHER UNE BOITE AUTOUR ---
+    // Ça permet de voir l'objet même s'il est tout noir ou mal éclairé
+    const box = new THREE.BoxHelper(mousqueton, 0xffff00); // Boite jaune
+    scene.add(box);
+
+    // --- 2. AUTO-CADRAGE (LA SOLUTION MAGIQUE) ---
+    // On calcule la boite englobante de l'objet
+    const boundingBox = new THREE.Box3().setFromObject(mousqueton);
+    const size = boundingBox.getSize(new THREE.Vector3()); // Taille de l'objet
+    const center = boundingBox.getCenter(new THREE.Vector3()); // Centre de l'objet
+
+    // Si l'objet est trop petit ou trop grand, on l'affiche dans la console
+    console.log("Taille de l'objet :", size);
+
+    // On recentre l'objet pour qu'il soit pile à (0,0,0)
+    mousqueton.position.x += (mousqueton.position.x - center.x);
+    mousqueton.position.y += (mousqueton.position.y - center.y);
+    mousqueton.position.z += (mousqueton.position.z - center.z);
+
+    // On recule la caméra en fonction de la taille de l'objet
+    // On prend la plus grande dimension (hauteur ou largeur) et on multiplie par 3
+    const maxDim = Math.max(size.x, size.y, size.z);
+    camera.position.z = maxDim * 3; 
+    
+    // --- 3. RÉGLAGE MANUEL DE L'ÉCHELLE ---
+    // Si après ça il est toujours bizarre, décommente la ligne suivante et teste des valeurs (0.1 ou 100)
+    // mousqueton.scale.set(10, 10, 10); 
+
+    // --- 4. RECHERCHE DE L'ANIMATION ---
+    // D'après votre console, l'objet à animer semble être "vis_base" ou "bloqueur"
     mousqueton.traverse((child) => {
         if (child.isMesh) {
-            console.log(child.name); // Regarde la console (F12) pour voir les vrais noms !
-            
-            // On cherche l'objet qui contient "vis" ou "amovible" ou "doigt"
-            // Adapte ce mot clé selon ce que tu vois dans la console
-            if (child.name.toLowerCase().includes('vis') || child.name.toLowerCase().includes('amovible')) {
-                gatePart = child; 
-                // Si la vis est groupée avec le doigt, on remonte au parent pour tout bouger
-                if(child.parent && child.parent.type !== 'Scene') {
-                    gatePart = child.parent;
-                }
+            // Regarde si le nom contient "vis" (votre console montre 'vis_base')
+            if (child.name.toLowerCase().includes('vis')) {
+                gatePart = child;
             }
         }
     });
@@ -96,12 +115,22 @@ window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// --- 6. BOUCLE D'ANIMATION ---
 const animate = () => {
     requestAnimationFrame(animate);
+    
     if(mousqueton) {
-        // Petit flottement permanent
-        mousqueton.position.y = Math.sin(Date.now() * 0.001) * 0.05;
+        // C'est ici qu'on règle la hauteur !
+        // -1 ou -2 permet de descendre l'objet.
+        // Math.sin crée le petit flottement.
+        
+        mousqueton.position.y = -8 + Math.sin(Date.now() * 0.001) * 0.05;
+        
+        // Si c'est encore trop haut, essayez -2 ou -3 à la place de -1.
+        // Si c'est trop bas, essayez 0 ou 1.
     }
+
     renderer.render(scene, camera);
 };
+
 animate();
