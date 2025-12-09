@@ -141,7 +141,7 @@ const animate = () => {
     requestAnimationFrame(animate);
     if(mousqueton) {
         // Flottement ajusté (plus bas avec le -1)
-        mousqueton.position.y = 6 + Math.sin(Date.now() * 0.001) * 0.05;
+        mousqueton.position.y = -6 + Math.sin(Date.now() * 0.001) * 0.05;
     }
     renderer.render(scene, camera);
 };
