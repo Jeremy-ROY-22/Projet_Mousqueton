@@ -1,97 +1,107 @@
+// 1. SETUP DE BASE
 const canvas = document.querySelector('#webgl');
 const scene = new THREE.Scene();
 
-// 1. CAMÉRA
-const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 25; // Le recul nécessaire pour voir l'objet entier
+// Caméra
+const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.z = 6; // Recule ou avance la caméra ici
 
-// 2. RENDU
+// Rendu
 const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-// 3. LUMIÈRES (Une seule fois !)
-const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+// Lumières (Ambiance Studio)
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
 scene.add(ambientLight);
 
-const spotLight = new THREE.SpotLight(0xffffff, 2);
-spotLight.position.set(10, 10, 10);
+const spotLight = new THREE.SpotLight(0xffffff, 1.5);
+spotLight.position.set(5, 10, 7);
 scene.add(spotLight);
 
-const rimLight = new THREE.DirectionalLight(0xff3333, 2); // Touche rouge stylée
-rimLight.position.set(-5, 0, -10);
+const rimLight = new THREE.DirectionalLight(0xff3333, 2); // Lumière rouge stylée
+rimLight.position.set(-5, 0, -5);
 scene.add(rimLight);
 
-// 4. CHARGEMENT
+// 2. CHARGEMENT DU MODÈLE
 const loader = new THREE.GLTFLoader();
 let mousqueton = null;
-let gatePart = null;
+let gatePart = null; // La partie qui va bouger
 
-// On utilise bien le dossier assets
-loader.load('./assets/mousqueton_web.glb', function (gltf) {
-    console.log("✅ MODÈLE CHARGÉ !");
+loader.load('assets/mousqueton_web.glb', (gltf) => {
     mousqueton = gltf.scene;
+    
+    // Réglages initiaux
+    mousqueton.scale.set(10, 10, 10); // CHANGE L'ÉCHELLE ICI SI TROP PETIT/GRAND
+    mousqueton.rotation.x = 0.2;
+    
     scene.add(mousqueton);
 
-    // Positionnement
-    // Positionnement : ON LE REMET AU CENTRE EXACT
-    mousqueton.position.set(0, 0, 0); 
-
-    // Échelle : ON LE GROSSIT X 25 (C'était sûrement ça le "truc" du début)
-    mousqueton.scale.set(25, 25, 25); 
-
-    // Rotation : Légèrement tourné pour voir le relief
-    mousqueton.rotation.set(0, 0, 0);
-
-    // Recherche du doigt pour l'animation
+    // --- RECHERCHE AUTOMATIQUE DU DOIGT ---
+    console.log("--- Noms des objets trouvés dans le fichier ---");
     mousqueton.traverse((child) => {
-        if (child.name === 'DOIGT_MOBILE' || (child.name.includes('vis') && child.parent.type !== 'Scene')) {
-            gatePart = child.name === 'DOIGT_MOBILE' ? child : child.parent;
+        if (child.isMesh) {
+            console.log(child.name); // Regarde la console (F12) pour voir les vrais noms !
+            
+            // On cherche l'objet qui contient "vis" ou "amovible" ou "doigt"
+            // Adapte ce mot clé selon ce que tu vois dans la console
+            if (child.name.toLowerCase().includes('vis') || child.name.toLowerCase().includes('amovible')) {
+                gatePart = child; 
+                // Si la vis est groupée avec le doigt, on remonte au parent pour tout bouger
+                if(child.parent && child.parent.type !== 'Scene') {
+                    gatePart = child.parent;
+                }
+            }
         }
     });
 
-    initScrollAnimations(); // On lance les animations seulement quand l'objet est là
-}, 
-undefined, 
-(error) => {
-    console.error("Erreur de chargement :", error);
+    initScrollAnimations();
 });
 
-// 5. ANIMATIONS (GSAP)
+// 3. ANIMATIONS GSAP
 gsap.registerPlugin(ScrollTrigger);
 
 function initScrollAnimations() {
     if (!mousqueton) return;
 
-    const tl = gsap.timeline({
+    // A. Rotation continue du mousqueton au scroll
+    gsap.to(mousqueton.rotation, {
+        y: Math.PI * 4, // Fait 2 tours complets
         scrollTrigger: {
             trigger: "body",
             start: "top top",
             end: "bottom bottom",
-            scrub: 1
+            scrub: 1 // Fluidité
         }
     });
 
-    // Rotation complète du mousqueton
-    tl.to(mousqueton.rotation, { y: Math.PI * 2 }, 0);
-
-    // Animation du doigt (si trouvé)
+    // B. Mouvement spécifique pour la section "Sécurité"
     if (gatePart) {
-        tl.to(gatePart.rotation, { y: -0.6, duration: 0.5 }, 0.3)
-          .to(gatePart.rotation, { y: 0, duration: 0.5 }, 0.7);
+        gsap.to(gatePart.rotation, {
+            z: -0.6, // OUVRE LE DOIGT (Change l'axe x, y ou z selon ton modèle)
+            scrollTrigger: {
+                trigger: ".security",
+                start: "top center",
+                end: "bottom center",
+                scrub: true
+            }
+        });
     }
 }
 
-// 6. REDIMENSIONNEMENT
+// 4. RESPONSIVE & LOOP
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// 7. BOUCLE D'ANIMATION
 const animate = () => {
     requestAnimationFrame(animate);
+    if(mousqueton) {
+        // Petit flottement permanent
+        mousqueton.position.y = Math.sin(Date.now() * 0.001) * 0.05;
+    }
     renderer.render(scene, camera);
 };
 animate();
