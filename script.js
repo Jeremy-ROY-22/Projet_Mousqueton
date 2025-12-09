@@ -3,8 +3,6 @@ const canvas = document.querySelector('#webgl');
 const scene = new THREE.Scene();
 
 // Caméra
-const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
-camera.position.z = 6; 
 
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
 
