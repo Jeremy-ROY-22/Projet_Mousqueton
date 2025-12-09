@@ -6,6 +6,11 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
 camera.position.z = 6; 
 
+const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
+
+camera.position.z = 6;  // Recul
+camera.position.y = 2;  // <--- AJOUTE CECI (Monter la caméra = Descendre l'objet)
+
 // Rendu
 const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
