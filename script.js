@@ -34,8 +34,13 @@ loader.load('./assets/mousqueton_web.glb', function (gltf) {
     scene.add(mousqueton);
 
     // Positionnement
-    mousqueton.position.set(0, -9, 0); 
-    mousqueton.scale.set(1, 1, 1); 
+    // Positionnement : ON LE REMET AU CENTRE EXACT
+    mousqueton.position.set(0, 0, 0); 
+
+    // Échelle : ON LE GROSSIT X 25 (C'était sûrement ça le "truc" du début)
+    mousqueton.scale.set(25, 25, 25); 
+
+    // Rotation : Légèrement tourné pour voir le relief
     mousqueton.rotation.set(0, 0, 0);
 
     // Recherche du doigt pour l'animation
